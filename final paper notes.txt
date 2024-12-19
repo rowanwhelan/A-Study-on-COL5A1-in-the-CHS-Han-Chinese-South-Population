@@ -1,0 +1,95 @@
+COL5A1:
+	Gene which encodes the instructions to make the type V collagen. 
+	Collagen is an important protein which promotes growth and repair in connective tissue and other import soft tissue.
+	A study by Dr. Anne De Paepe et al. found that mutations within COL5A1 are causal in both types of Ehlers-Danlos Syndrome. (Genetic Disorder that weakens connective tissue) And another study by Dr. Zulek et al. which investigated the correlation between COL5A1 and carpal tunnel.
+	https://pubmed.ncbi.nlm.nih.gov/9042913/
+	I initially selected the CHB (Han Chinese in Beijing) population to do a study on because I found an article which found correlations between genetic variation in COL5A1 (and two other COL _ A1 genes) with ligament injuries in this population.
+	Going in, I hypothesize that COL5A1 would shows signs of selective pressure because of the background information I was reading and the essential function I found. 
+	However the mains things I'm curious about is exploring to see what genetic diversity exists within this gene where the phenotype is an essential part of the body. I also wanted to explore some of the snps I found in my research to see if they were under selective pressure. 
+	"9:134651496:G:A"
+	"9:134654639:C:A" Very Very Unlikely 
+	I found 53 snps out of HWE 
+	Right now my plan is to contiune through the modules. I plan to focus on detecting inbreeding and also 
+	checking linkage disequilibrium to see if some of the 53 significant snps I found are inheirited together. Basically looking for selective sweeps.
+	I ignored blocks which were less than 5 pairs long for brevities sake
+
+	Number of records: 1617
+	Number of SNPS: 1361
+	Number of indels: 256
+
+
+	
+Articles:
+
+
+CODE:
+
+to generate the COL5A1 gene data for every 1000 genomes population:
+tabix -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20201028_3202_phased/CCDG_14151_B01_GRM_WGS_2020-08-05_chr9.filtered.shapeit2-duohmm-phased.vcf.gz chr9:134641803-134844843 > /projectnb/anth333/rwhelan3/COL5A1/COL5A1_all_regions.vcf
+
+to generate the 5000+- COL5A1 gene data for every 1000 genomes population:
+tabix -h ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/20201028_3202_phased/CCDG_14151_B01_GRM_WGS_2020-08-05_chr9.filtered.shapeit2-duohmm-phased.vcf.gz chr9:134636803-134839843 > /projectnb/anth333/rwhelan3/COL5A1/COL5A1_pm_all_regions.vcf
+
+to get call samples:
+wget ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel
+
+to generate subject lists for the two sample populations:
+grep CHS /projectnb/anth333/rwhelan3/COL5A1/integrated_call_samples_v3.20130502.ALL.panel | cut -f1 > /projectnb/anth333/rwhelan3/COL5A1/CHS.samples.list
+grep JPT /projectnb/anth333/rwhelan3/COL5A1/integrated_call_samples_v3.20130502.ALL.panel | cut -f1 > /projectnb/anth333/rwhelan3/COL5A1/JPT.samples.list
+
+code to filter the vcf for the two populations:
+vcftools --vcf /projectnb/anth333/rwhelan3/COL5A1//COL5A1_all_regions.vcf --keep /projectnb/anth333/rwhelan3/COL5A1/COL5A1_JPT/JPT.samples.list --recode --out /projectnb/anth333/rwhelan3/COL5A1/COL5A1_JPT/COL5A1_JPT.vcf --non-ref-ac-any 1
+vcftools --vcf /projectnb/anth333/rwhelan3/COL5A1/COL5A1_all_regions.vcf --keep /projectnb/anth333/rwhelan3/COL5A1/COL5A1_CHS/CHS.samples.list --recode --out /projectnb/anth333/rwhelan3/COL5A1/COL5A1_CHS/COL5A1_CHS.vcf --non-ref-ac-any 1
+
+RSTUDIO: 
+To make the LD heatmap 1:
+COL5A1vcf <- read.vcfR("COL5A1_CHB.vcf")
+COL5A1matrix <- vcfR2SnpMatrix(COL5A1vcf)
+COL5A1_LD <- snpStats::ld(COL5A1matrix$data, depth = 1616, stats = "R.squared")
+R2heatmapCOL5A1 <- LDheatmap(COL5A1matrix$data,
+                           genetic.distances=COL5A1matrix$genetic.distances,
+                           distances="physical",
+                           LDmeasure="r",
+                           title="Pairwise LD in COL5A1 for CHB using R^2",
+                           add.map=TRUE, add.key=TRUE,
+                           geneMapLocation=0.15,
+                           SNP.name=c(	"9:134651496:G:A","9:134654639:C:A"),
+                           color=NULL, newpage=TRUE,
+                           name="COL5A1 LD Heatmap (R^2)")
+To find the important segments of LD:
+col5a1_res = BigLD(genofile = "COL5A1_CHB.vcf",LD="r2")
+
+To generate LD heatmap 2:
+rgb.palette <- colorRampPalette(rev(c("grey85", "green", "darkgreen")), space = "rgb")
+
+png(filename="COL5A1_CHB_LD2.png",units="in",res=600,width=6,height=5)
+
+R2heatmapUCP1 <- LDheatmap(COL5A1matrix$data,
+                           genetic.distances=COL5A1matrix$genetic.distances,
+                           distances="physical",
+                           LDmeasure="r",
+                           title="Pairwise LD in UCP1 for YRI using R^2",
+                           add.map=TRUE, add.key=TRUE,
+                           geneMapLocation=0.15,
+                           SNP.name=c("4:140560427:T:C", "4:140562317:T:A",
+                                      "4:140563980:G:A", "4:140569265:T:G",
+                                      "4:140572807:T:C"),
+                           color=rgb.palette(18), newpage=TRUE,
+                           name="R2heatmapUCP1")
+
+LDheatmap.highlight(R2heatmapUCP1, i = 5, j = 375, fill = "NA", col = "gold", lwd = 2,lty = 1,flipOutline=FALSE, crissCross = FALSE)
+
+LDheatmap.highlight(R2heatmapUCP1, i = 402, j = 419, fill = "NA", col = "gold3", lwd = 2,lty = 1,flipOutline=FALSE, crissCross = FALSE)
+
+LDheatmap.highlight(R2heatmapUCP1, i = 438, j = 761, fill = "NA", col = "gold4", lwd = 2,lty = 1,flipOutline=FALSE, crissCross = FALSE)
+
+LDheatmap.highlight(R2heatmapUCP1, i = 1089, j = 1302, fill = "NA", col = "goldenrod", lwd = 2,lty = 1,flipOutline=FALSE, crissCross = FALSE)
+dev.off()
+
+PHILOGENIC TREE:
+CHBdna <- vcfR2DNAbin(COL5A1vcf)
+par(mar=c(5,8,4,2))
+ape::image.DNAbin(CHBdna[,ape::seg.sites(CHBdna)],cex.lab=0.5)
+
+
+
